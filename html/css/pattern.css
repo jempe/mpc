@@ -1,0 +1,58 @@
+.dot {
+    width: 10vh;
+    height: 10vh;
+    border: solid 1px #999;
+    border-radius: 50%;
+    position: absolute;
+    float: left;
+    margin-left: -5vh;
+    margin-top: -5vh;
+}
+.dot:before {
+    content: " ";
+    background: #999;
+    width: 5vh;
+    height: 5vh;
+    float: left;
+    border-radius: 50%;
+    margin-left: 2.5vh;
+    margin-top: 2.5vh;
+}
+div#pattern_container {
+    width: 60vh;
+    height: 60vh;
+    position: absolute;
+    left: 50vw;
+    margin-left: -30vh;
+    top: 20vh;
+}
+.dot:nth-child(2n) {
+    left: 50%;
+}
+.dot:nth-child(3n) {
+    left: 100%;
+}
+.dot:nth-child(n+4) {
+    top: 50%;
+}
+.dot:nth-child(n+7) {
+    top: 100%;
+}
+.dot[data-selected='true'] {
+    border-color: white;
+}
+.dot[data-selected='true']:before {
+    background: white;
+}
+.dot[data-clicked='true'] {
+    border-color: yellow;
+}
+.dot[data-clicked='true']:before {
+    background: yellow;
+}
+.dot:nth-child(4) {
+    left: 0;
+}
+.dot:nth-child(5) {
+    left: 50%;
+}

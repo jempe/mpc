@@ -1,0 +1,54 @@
+<!DOCTYPE html>
+<html>
+	<head>
+		<meta id="viewport" name="viewport" content="width=device-width, initial-scale=1.0">
+		<script src="js/react.js"></script>
+		<script src="js/react-dom.js"></script>
+		<script src="js/babel.min.js"></script>
+		<link rel="stylesheet" href="css/mpc.css?v=4"/>
+		<link rel="stylesheet" href="css/preview.css?v=4"/>
+		<link rel="stylesheet" href="css/grid.css?v=4"/>
+		<link rel="stylesheet" href="css/player.css?v=4"/>
+		<link rel="stylesheet" href="css/pattern.css?v=6"/>
+		    <script>
+			/**
+			 * This script will set the 'initial-scale' value on the viewport metatag
+			 * The scale is used to fit the template on Kindle Fire mobile devices
+			 * This must be handled in the head of the document because the scale
+			 * is not affected once the page finishes loading
+			 */
+			if(isTV())
+			{
+				var vp = document.getElementById('viewport');
+
+				var initialScale = Math.max(screen.width, screen.height)/1920;
+
+				vp.setAttribute('content','width=device-width, initial-scale=' + initialScale + ', maximum-scale=' + initialScale, + 'minimum-scale=' + initialScale);
+
+			}
+
+			function isTV()
+			{
+				if(navigator.userAgent.indexOf("AmazonWebAppPlatform") != -1 && navigator.userAgent.indexOf("AFT") != -1)
+				{
+					return true;
+				}
+				else
+				{
+					return false;
+				}
+			}
+
+			var enter_pattern = true;
+
+		    </script>
+	</head>
+	<body>
+		<div id="app_container"></div>
+		<div id="pattern_container"></div>
+		<script type="text/babel" src="js/components.js?v=13"></script>
+		<script type="text/babel" src="js/pattern_login.js?v=12"></script>
+		<script type="text/babel" src="js/app.js?v=11"></script>
+		<script type="text/babel" src="js/remote.js?v=12"></script>
+	</body>
+</html>

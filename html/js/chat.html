@@ -1,0 +1,70 @@
+<html>
+  <head>
+    <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1">
+    <title>Chat</title>
+    <style>
+
+      input { display: block; width:100%; margin-bottom:20px; }
+      ul    { list-style: none; }
+      body {
+		padding:30px;
+	}
+
+    </style>
+  </head>
+  <body>
+
+    <ul id="messages" style="display:none;"></ul>
+    <form id="chatbox" onsubmit="return false;">
+	<input type="text" id="title" placeholder="Title" />
+	<input type="text" id="actors" placeholder="Actors" />
+	<input type="text" id="categories" placeholder="Categories" />
+        <input type="submit" value="Search" onclick="sendMessage()" />
+    </form>
+
+    <script>
+	var filter = {
+		"title" : "",
+		"category" : "",
+		"actor" : "",
+		"quality" : "",
+		"duration" : [0, 1000000000]
+	}
+
+
+        var socket = null;
+        var msgBox = document.querySelector("#chatbox textarea");
+        var messages = document.getElementById("messages");
+
+        function sendMessage(){
+
+		if (!socket) {
+			alert("Error: There is no socket connection.");
+			return false;
+		}
+
+		filter.actor = document.getElementById("actors").value.toLowerCase();
+		filter.category = document.getElementById("categories").value.toLowerCase();
+		filter.title = document.getElementById("title").value.toLowerCase();
+
+		socket.send(JSON.stringify(filter));
+		return false;
+        }
+
+        if (!window["WebSocket"]) {
+          alert("Error: Your browser does not support web sockets.")
+        } else {
+          socket = new WebSocket("ws://" + location.host + "/remote" + location.search);
+          socket.onclose = function() {
+            alert("Connection has been closed.");
+          }
+          socket.onmessage = function(e) {
+		  var message = document.createElement('li');
+		  messages.appendChild(message);
+            	  message.innerHTML = e.data;
+          }
+        }
+
+    </script>
+  </body>
+</html>
