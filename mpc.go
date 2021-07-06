@@ -1,6 +1,8 @@
 package main
 
 import (
+	"embed"
+	"flag"
 	"github.com/jempe/mpc/auth"
 	"github.com/jempe/mpc/library"
 	"github.com/jempe/mpc/remote"
@@ -8,7 +10,6 @@ import (
 	"github.com/jempe/mpc/storage"
 	"github.com/jempe/mpc/users"
 	"github.com/jempe/mpc/utils"
-	"flag"
 	"html/template"
 	"log"
 	"net/http"
@@ -22,6 +23,11 @@ var libPath string
 var library *mpclibrary.Library
 var indexTemplate *template.Template
 var key string = "ThisisAT3stKey123"
+
+//go:embed tmpl/index.html
+//go:embed html/js/* html/fonts/* html/css/* html/images/*
+
+var content embed.FS
 
 type IndexPage struct {
 	AuthMethod string
@@ -80,18 +86,18 @@ func main() {
 	log.Println("uuid:", id)
 
 	// load and parse index page template
-	paths := []string{"tmpl/index.html"}
-	indexTemplate = template.Must(template.ParseFiles(paths...))
+	//paths := []string{"tmpl/index.html"}
+	indexTemplate = template.Must(template.ParseFS(content, "tmpl/index.html"))
 
 	localIP := mpcutils.GetLocalIP()
 
 	server := &mpcserver.Server{IP: localIP, Storage: storage, Library: library, Key: key, Auth: auth}
 
 	http.HandleFunc("/", homeHandler)
-	http.Handle("/js/", http.StripPrefix("/js/", http.FileServer(http.Dir("html/js"))))
-	http.Handle("/fonts/", http.StripPrefix("/fonts/", http.FileServer(http.Dir("html/fonts"))))
-	http.Handle("/css/", http.StripPrefix("/css/", http.FileServer(http.Dir("html/css"))))
-	http.Handle("/images/", http.StripPrefix("/images/", http.FileServer(http.Dir("html/images"))))
+	http.Handle("/html/", http.FileServer(http.FS(content)))
+	//http.Handle("/fonts/", http.StripPrefix("/fonts/", http.FileServer(http.FS(content))))
+	//http.Handle("/css/", http.StripPrefix("/css/", http.FileServer(http.FS(content))))
+	//http.Handle("/images/", http.StripPrefix("/images/", http.FileServer(http.FS(content))))
 	http.HandleFunc("/videos.json", server.VideosHandler)
 	http.HandleFunc("/videos/", server.VideoFileHandler)
 	http.HandleFunc("/scan/", server.ScanHandler)
