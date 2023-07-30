@@ -29,6 +29,19 @@ type Server struct {
 	Key     string
 }
 
+func (server *Server) ActorsHandler(w http.ResponseWriter, r *http.Request) {
+	w.Header().Set("Content-Type", "application/json")
+
+	actorList := server.Storage.Actors
+
+	jsonResponse, err := json.Marshal(actorList)
+	if err != nil {
+		log.Println(err)
+	}
+
+	fmt.Fprintln(w, string(jsonResponse))
+}
+
 // VideosHandler handles shows JSON videos list
 //
 func (server *Server) VideosHandler(w http.ResponseWriter, r *http.Request) {

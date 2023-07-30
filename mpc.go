@@ -98,6 +98,7 @@ func main() {
 	//http.Handle("/fonts/", http.StripPrefix("/fonts/", http.FileServer(http.FS(content))))
 	//http.Handle("/css/", http.StripPrefix("/css/", http.FileServer(http.FS(content))))
 	//http.Handle("/images/", http.StripPrefix("/images/", http.FileServer(http.FS(content))))
+	http.HandleFunc("/actors.json", server.ActorsHandler)
 	http.HandleFunc("/videos.json", server.VideosHandler)
 	http.HandleFunc("/videos/", server.VideoFileHandler)
 	http.HandleFunc("/scan/", server.ScanHandler)
