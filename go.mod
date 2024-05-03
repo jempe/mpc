@@ -1,13 +1,10 @@
 module github.com/jempe/mpc
 
-go 1.16
+go 1.22.2
 
 require (
-	github.com/asaskevich/govalidator v0.0.0-20210307081110-f21760c49a8d
-	github.com/boltdb/bolt v1.3.1
-	github.com/dgrijalva/jwt-go v3.2.0+incompatible
-	github.com/google/uuid v1.2.0
-	github.com/gorilla/websocket v1.4.2
-	github.com/jempe/encdec v0.0.0-20180806164515-5dfdd1b50580
-	github.com/spf13/viper v1.8.1
+	github.com/julienschmidt/httprouter v1.3.0
+	github.com/lib/pq v1.10.9
+	github.com/pgvector/pgvector-go v0.1.1
+	golang.org/x/time v0.0.0-20191024005414-555d28b269f0
 )
