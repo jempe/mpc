@@ -36,7 +36,7 @@ func (app *application) runCronJob() {
 			},
 		}
 
-		Videos, metadata, err := app.models.Videos.GetAllNotInSemantic(filter)
+		videos, metadata, err := app.models.Videos.GetAllNotInSemantic(filter)
 		if err != nil {
 			app.logger.PrintError(err, nil)
 			return
@@ -44,10 +44,10 @@ func (app *application) runCronJob() {
 
 		app.logger.PrintInfo("Videos to process", map[string]string{
 			"total":      strconv.Itoa(metadata.TotalRecords),
-			"processing": strconv.Itoa(len(Videos)),
+			"processing": strconv.Itoa(len(videos)),
 		})
 
-		for _, Video := range Videos {
+		for _, video := range videos {
 
 			fields := []string{
 				"videos.description",
@@ -74,7 +74,7 @@ func (app *application) runCronJob() {
 							Content:      content,
 							Tokens:       countedTokens,
 							Sequence:     1,
-							VideoID:      Video.ID,
+							VideoID:      video.ID,
 							ContentField: field,
 						}
 
@@ -102,7 +102,7 @@ func (app *application) runCronJob() {
 								Content:      part,
 								Tokens:       countedTokens,
 								Sequence:     seq + 1,
-								VideoID:      Video.ID,
+								VideoID:      video.ID,
 								ContentField: field,
 							}
 
