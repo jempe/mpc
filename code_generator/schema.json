@@ -1,7 +1,7 @@
 {
 	"version": 1,
 	"go_module": "github.com/jempe/mpc",
-	"db_name": "api",
+	"db_name": "mpc",
 	"tables": [
 		{
 			"ItemName": "Video",
