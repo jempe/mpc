@@ -12,7 +12,8 @@ import (
 
 func (app *application) createCategoryHandler(w http.ResponseWriter, r *http.Request) {
 	var input struct {
-		Name string `json:"name"`
+		Name                 string `json:"name"`
+		EnableSemanticSearch bool   `json:"enable_semantic_search"`
 	}
 
 	err := app.readJSON(w, r, &input)
@@ -22,7 +23,8 @@ func (app *application) createCategoryHandler(w http.ResponseWriter, r *http.Req
 	}
 
 	category := &data.Category{
-		Name: input.Name,
+		Name:                 input.Name,
+		EnableSemanticSearch: input.EnableSemanticSearch,
 	}
 
 	v := validator.New()
@@ -34,7 +36,7 @@ func (app *application) createCategoryHandler(w http.ResponseWriter, r *http.Req
 
 	err = app.models.Categories.Insert(category)
 	if err != nil {
-		app.serverErrorResponse(w, r, err)
+		app.handleCustomCategoryErrors(err, w, r, v)
 		return
 	}
 
@@ -98,7 +100,8 @@ func (app *application) updateCategoryHandler(w http.ResponseWriter, r *http.Req
 	}
 
 	var input struct {
-		Name *string `json:"name"`
+		Name                 *string `json:"name"`
+		EnableSemanticSearch *bool   `json:"enable_semantic_search"`
 	}
 
 	err = app.readJSON(w, r, &input)
@@ -111,6 +114,10 @@ func (app *application) updateCategoryHandler(w http.ResponseWriter, r *http.Req
 		category.Name = *input.Name
 	}
 
+	if input.EnableSemanticSearch != nil {
+		category.EnableSemanticSearch = *input.EnableSemanticSearch
+	}
+
 	v := validator.New()
 
 	if data.ValidateCategory(v, category, validator.ActionUpdate); !v.Valid() {
@@ -120,10 +127,11 @@ func (app *application) updateCategoryHandler(w http.ResponseWriter, r *http.Req
 
 	err = app.models.Categories.Update(category)
 	if err != nil {
-		switch {
-		case errors.Is(err, data.ErrEditConflict):
+
+		if errors.Is(err, data.ErrEditConflict) {
 			app.editConflictResponse(w, r)
-		default:
+			app.handleCustomCategoryErrors(err, w, r, v)
+		} else {
 			app.serverErrorResponse(w, r, err)
 		}
 		return
@@ -161,7 +169,8 @@ func (app *application) deleteCategoryHandler(w http.ResponseWriter, r *http.Req
 
 func (app *application) listCategoryHandler(w http.ResponseWriter, r *http.Request) {
 	var input struct {
-		Name string
+		Name                 string
+		EnableSemanticSearch bool
 		data.Filters
 	}
 
@@ -170,6 +179,7 @@ func (app *application) listCategoryHandler(w http.ResponseWriter, r *http.Reque
 	qs := r.URL.Query()
 
 	input.Name = app.readString(qs, "name", "")
+	input.EnableSemanticSearch = app.readBool(qs, "enable_semantic_search", false)
 
 	input.Filters.Page = app.readInt(qs, "page", 1, v)
 	input.Filters.PageSize = app.readInt(qs, "page_size", 20, v)
@@ -200,3 +210,35 @@ func (app *application) listCategoryHandler(w http.ResponseWriter, r *http.Reque
 		app.serverErrorResponse(w, r, err)
 	}
 }
+
+/*handle_custom_errors_start*/
+
+func (app application) handleCustomCategoryErrors(err error, w http.ResponseWriter, r *http.Request, v *validator.Validator) {
+	switch {
+	//	case errors.Is(err, data.ErrDuplicateCategoryTitleEn):
+	//		v.AddError("title_en", "a title with this name already exists")
+	//		app.failedValidationResponse(w, r, v.Errors)
+	//	case errors.Is(err, data.ErrDuplicateCategoryTitleEs):
+	//		v.AddError("title_es", "a title with this name already exists")
+	//		app.failedValidationResponse(w, r, v.Errors)
+	//	case errors.Is(err, data.ErrDuplicateCategoryTitleFr):
+	//		v.AddError("title_fr", "a title with this name already exists")
+	//		app.failedValidationResponse(w, r, v.Errors)
+	//	case errors.Is(err, data.ErrDuplicateCategoryURLEn):
+	//		v.AddError("url_en", "a video with this URL already exists")
+	//		app.failedValidationResponse(w, r, v.Errors)
+	//	case errors.Is(err, data.ErrDuplicateCategoryURLEs):
+	//		v.AddError("url_es", "a video with this URL already exists")
+	//		app.failedValidationResponse(w, r, v.Errors)
+	//	case errors.Is(err, data.ErrDuplicateCategoryURLFr):
+	//		v.AddError("url_fr", "a video with this URL already exists")
+	//		app.failedValidationResponse(w, r, v.Errors)
+	//	case errors.Is(err, data.ErrDuplicateCategoryFolder):
+	//		v.AddError("folder", "a video with this folder already exists")
+	//		app.failedValidationResponse(w, r, v.Errors)
+	default:
+		app.serverErrorResponse(w, r, err)
+	}
+}
+
+/*handle_custom_errors_end*/

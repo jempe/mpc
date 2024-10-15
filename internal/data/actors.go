@@ -9,17 +9,17 @@ import (
 )
 
 type Actor struct {
-	ID         int64     `json:"id,omitempty" db:"id"`
-	Name       string    `json:"name,omitempty" db:"name"`
-	Gender     string    `json:"gender,omitempty" db:"gender"`
-	BirthDate  time.Time `json:"birth_date,omitempty" db:"birth_date"`
-	BirthPlace string    `json:"birth_place,omitempty" db:"birth_place"`
-	Biography  string    `json:"biography,omitempty" db:"biography"`
-	Height     int       `json:"height,omitempty" db:"height"`
-	ImageURL   string    `json:"image_url,omitempty" db:"image_url"`
-	Version    int32     `json:"version,omitempty" db:"version"`
-	CreatedAt  time.Time `json:"-" db:"created_at"`
-	ModifiedAt time.Time `json:"-" db:"modified_at"`
+	ID         int64     `json:"id" db:"id"`
+	Name       string    `json:"name" db:"name"`
+	Gender     string    `json:"gender" db:"gender"`
+	BirthDate  time.Time `json:"birth_date" db:"birth_date"`
+	BirthPlace string    `json:"birth_place" db:"birth_place"`
+	Biography  string    `json:"biography" db:"biography"`
+	Height     int       `json:"height" db:"height"`
+	ImageURL   string    `json:"image_url" db:"image_url"`
+	Version    int32     `json:"version" db:"version"`
+	CreatedAt  time.Time `json:"created_at" db:"created_at"`
+	ModifiedAt time.Time `json:"modified_at" db:"modified_at"`
 }
 
 type ActorModel struct {
@@ -61,7 +61,14 @@ func (m ActorModel) Insert(actor *Actor) error {
 	ctx, cancel := context.WithTimeout(context.Background(), 3*time.Second)
 	defer cancel() // releases resources if slowOperation completes before timeout elapses, prevents memory leak
 
-	return m.DB.QueryRowContext(ctx, query, args...).Scan(&actor.ID, &actor.Version, &actor.CreatedAt, &actor.ModifiedAt)
+	err := m.DB.QueryRowContext(ctx, query, args...).Scan(&actor.ID, &actor.Version, &actor.CreatedAt, &actor.ModifiedAt)
+
+	if err != nil {
+		return actorCustomError(err)
+	}
+
+	return nil
+
 }
 
 func (m ActorModel) Get(id int64) (*Actor, error) {
@@ -145,11 +152,10 @@ func (m ActorModel) Update(actor *Actor) error {
 
 	err := m.DB.QueryRowContext(ctx, query, args...).Scan(&actor.Version)
 	if err != nil {
-		switch {
-		case errors.Is(err, sql.ErrNoRows):
+		if errors.Is(err, sql.ErrNoRows) {
 			return ErrEditConflict
-		default:
-			return err
+		} else {
+			return actorCustomError(err)
 		}
 	}
 

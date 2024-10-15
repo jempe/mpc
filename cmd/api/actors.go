@@ -47,7 +47,7 @@ func (app *application) createActorHandler(w http.ResponseWriter, r *http.Reques
 
 	err = app.models.Actors.Insert(actor)
 	if err != nil {
-		app.serverErrorResponse(w, r, err)
+		app.handleCustomActorErrors(err, w, r, v)
 		return
 	}
 
@@ -163,10 +163,11 @@ func (app *application) updateActorHandler(w http.ResponseWriter, r *http.Reques
 
 	err = app.models.Actors.Update(actor)
 	if err != nil {
-		switch {
-		case errors.Is(err, data.ErrEditConflict):
+
+		if errors.Is(err, data.ErrEditConflict) {
 			app.editConflictResponse(w, r)
-		default:
+			app.handleCustomActorErrors(err, w, r, v)
+		} else {
 			app.serverErrorResponse(w, r, err)
 		}
 		return
@@ -253,3 +254,35 @@ func (app *application) listActorHandler(w http.ResponseWriter, r *http.Request)
 		app.serverErrorResponse(w, r, err)
 	}
 }
+
+/*handle_custom_errors_start*/
+
+func (app application) handleCustomActorErrors(err error, w http.ResponseWriter, r *http.Request, v *validator.Validator) {
+	switch {
+	//	case errors.Is(err, data.ErrDuplicateActorTitleEn):
+	//		v.AddError("title_en", "a title with this name already exists")
+	//		app.failedValidationResponse(w, r, v.Errors)
+	//	case errors.Is(err, data.ErrDuplicateActorTitleEs):
+	//		v.AddError("title_es", "a title with this name already exists")
+	//		app.failedValidationResponse(w, r, v.Errors)
+	//	case errors.Is(err, data.ErrDuplicateActorTitleFr):
+	//		v.AddError("title_fr", "a title with this name already exists")
+	//		app.failedValidationResponse(w, r, v.Errors)
+	//	case errors.Is(err, data.ErrDuplicateActorURLEn):
+	//		v.AddError("url_en", "a video with this URL already exists")
+	//		app.failedValidationResponse(w, r, v.Errors)
+	//	case errors.Is(err, data.ErrDuplicateActorURLEs):
+	//		v.AddError("url_es", "a video with this URL already exists")
+	//		app.failedValidationResponse(w, r, v.Errors)
+	//	case errors.Is(err, data.ErrDuplicateActorURLFr):
+	//		v.AddError("url_fr", "a video with this URL already exists")
+	//		app.failedValidationResponse(w, r, v.Errors)
+	//	case errors.Is(err, data.ErrDuplicateActorFolder):
+	//		v.AddError("folder", "a video with this folder already exists")
+	//		app.failedValidationResponse(w, r, v.Errors)
+	default:
+		app.serverErrorResponse(w, r, err)
+	}
+}
+
+/*handle_custom_errors_end*/

@@ -1,16 +1,24 @@
 {
-	"version": 1,
+	"db_version": 1,
 	"go_module": "github.com/jempe/mpc",
-	"db_name": "api",
+	"db_name": "mpc",
+	"binary_version": "1.0.0",
+	"enable_semantic_search": true,
+	"embeddings_providers": ["sentence-transformers"],
+	"enable_llm": false,
+	"port": 4000,
 	"tables": [
 		{
 			"ItemName": "Video",
 			"ItemsName": "Videos",
 			"item_name": "video",
 			"items_name": "videos",
-			"itemName": "video",
-			"itemsName": "videos",
 			"used_for_embeddings": true,
+			"ui": {
+				"items_name": "Videos",
+				"item_name": "Video",
+				"in_menu": true
+			},
 			"key" : {
 				"FieldName": "ID",
 				"field_name": "id",
@@ -18,39 +26,66 @@
 			},
 			"fields": [
 				{
-					"FieldName": "Title",
-					"field_name": "title",
+					"FieldName": "Name",
+					"field_name": "name",
 					"enable_filter": true,
 					"enable_sort": true,
-					"goType": "string"
+					"goType": "string",
+					"use_for_embeddings": true,
+					"use_for_embeddings_title": true,
+					"ui": {
+						"field_name": "Name",
+						"field_type": "text",
+						"in_table": true
+					}
 				},
 				{
 					"FieldName": "ThumbURL",
 					"field_name": "thumb_url",
 					"enable_filter": false,
 					"enable_sort": false,
-					"goType": "string"
+					"goType": "string",
+					"ui": {
+						"field_name": "Thumb URL",
+						"field_type": "image",
+						"in_table": false
+					}
 				},
 				{
 					"FieldName": "ImageURL",
 					"field_name": "image_url",
 					"enable_filter": false,
 					"enable_sort": false,
-					"goType": "string"
+					"goType": "string",
+					"ui": {
+						"field_name": "Image URL",
+						"field_type": "image",
+						"in_table": false
+					}
 				},
 				{
 					"FieldName": "VideoURL",
 					"field_name": "video_url",
 					"enable_filter": false,
 					"enable_sort": false,
-					"goType": "string"
+					"goType": "string",
+					"ui": {
+						"field_name": "Video URL",
+						"field_type": "video",
+						"in_table": false
+					}
 				},
 				{
 					"FieldName": "SubtitlesURL",
 					"field_name": "subtitles_url",
 					"enable_filter": false,
 					"enable_sort": false,
-					"goType": "string"
+					"goType": "string",
+					"ui": {
+						"field_name": "Subtitles URL",
+						"field_type": "text",
+						"in_table": false
+					}
 				},
 				{
 					"FieldName": "Description",
@@ -58,70 +93,120 @@
 					"enable_filter": false,
 					"enable_sort": false,
 					"use_for_embeddings": true,
-					"goType": "string"
+					"goType": "string",
+					"ui": {
+						"field_name": "Description",
+						"field_type": "text",
+						"in_table": false
+					}
 				},
 				{
 					"FieldName": "ReleaseDate",
 					"field_name": "release_date",
 					"enable_filter": false,
 					"enable_sort": true,
-					"goType": "time.Time"
+					"goType": "time.Time",
+					"ui": {
+						"field_name": "Release Date",
+						"field_type": "date",
+						"in_table": true
+					}
 				},
 				{
 					"FieldName": "Width",
 					"field_name": "width",
 					"enable_filter": false,
 					"enable_sort": false,
-					"goType": "int"
+					"goType": "int",
+					"ui": {
+						"field_name": "Width",
+						"field_type": "number",
+						"in_table": false
+					}
 				},
 				{
 					"FieldName": "Height",
 					"field_name": "height",
 					"enable_filter": false,
 					"enable_sort": false,
-					"goType": "int"
+					"goType": "int",
+					"ui": {
+						"field_name": "Height",
+						"field_type": "number",
+						"in_table": false
+					}
 				},
 				{
 					"FieldName": "Duration",
 					"field_name": "duration",
 					"enable_filter": false,
 					"enable_sort": false,
-					"goType": "int"
+					"goType": "int",
+					"ui": {
+						"field_name": "Duration",
+						"field_type": "number",
+						"in_table": false
+					}
 				},
 				{
 					"FieldName": "Sequence",
 					"field_name": "sequence",
 					"enable_filter": false,
 					"enable_sort": true,
-					"goType": "int"
+					"goType": "int",
+					"ui": {
+						"field_name": "Sequence",
+						"field_type": "number",
+						"in_table": true
+					}
 				},
 				{
 					"FieldName": "File",
 					"field_name": "file",
 					"enable_filter": true,
 					"enable_sort": false,
-					"goType": "string"
+					"goType": "string",
+					"ui": {
+						"field_name": "File",
+						"field_type": "text",
+						"in_table": false
+					}
 				},
 				{
 					"FieldName": "OriginalFile",
 					"field_name": "original_file",
 					"enable_filter": true,
 					"enable_sort": false,
-					"goType": "string"
+					"goType": "string",
+					"ui": {
+						"field_name": "Original File",
+						"field_type": "text",
+						"in_table": false
+					}
 				},
 				{
 					"FieldName": "Path",
 					"field_name": "path",
 					"enable_filter": false,
 					"enable_sort": false,
-					"goType": "bool"
+					"goType": "string",
+					"ui": {
+						"field_name": "Path",
+						"field_type": "text",
+						"in_table": false
+					}
 				},
 				{
 					"FieldName": "Md5sum",
 					"field_name": "md5sum",
 					"enable_filter": true,
 					"enable_sort": false,
-					"goType": "string"
+					"goType": "string",
+					"ui": {
+						"field_name": "Md5sum",
+						"field_type": "text",
+						"in_table": false
+					}
 				}
 			]
 		},
@@ -130,8 +215,12 @@
 			"ItemsName": "Categories",
 			"item_name": "category",
 			"items_name": "categories",
-			"itemName": "category",
-			"itemsName": "categories",
+			"used_for_embeddings": true,
+			"ui": {
+				"items_name": "Categories",
+				"item_name": "Category",
+				"in_menu": true
+			},
 			"key" : {
 				"FieldName": "ID",
 				"field_name": "id",
@@ -143,7 +232,14 @@
 					"field_name": "name",
 					"enable_filter": true,
 					"enable_sort": true,
-					"goType": "string"
+					"goType": "string",
+					"use_for_embeddings": true,
+					"use_for_embeddings_title": true,
+					"ui": {
+						"field_name": "Name",
+						"field_type": "text",
+						"in_table": true
+					}
 				}
 			]
 		},
@@ -152,8 +248,11 @@
 			"ItemsName": "Actors",
 			"item_name": "actor",
 			"items_name": "actors",
-			"itemName": "actor",
-			"itemsName": "actors",
+			"ui": {
+				"items_name": "Actors",
+				"item_name": "Actor",
+				"in_menu": true
+			},
 			"key" : {
 				"FieldName": "ID",
 				"field_name": "id",
@@ -165,49 +264,84 @@
 					"field_name": "name",
 					"enable_filter": true,
 					"enable_sort": true,
-					"goType": "string"
+					"goType": "string",
+					"ui": {
+						"field_name": "Name",
+						"field_type": "text",
+						"in_table": true
+					}
 				},
 				{
 					"FieldName": "Gender",
 					"field_name": "gender",
 					"enable_filter": true,
 					"enable_sort": true,
-					"goType": "string"
+					"goType": "string",
+					"ui": {
+						"field_name": "Gender",
+						"field_type": "text",
+						"in_table": true
+					}
 				},
 				{
 					"FieldName": "BirthDate",
 					"field_name": "birth_date",
 					"enable_filter": false,
 					"enable_sort": true,
-					"goType": "time.Time"
+					"goType": "time.Time",
+					"ui": {
+						"field_name": "Birth Date",
+						"field_type": "date",
+						"in_table": true
+					}
 				},
 				{
 					"FieldName": "BirthPlace",
 					"field_name": "birth_place",
 					"enable_filter": false,
 					"enable_sort": false,
-					"goType": "string"
+					"goType": "string",
+					"ui": {
+						"field_name": "Birth Place",
+						"field_type": "text",
+						"in_table": true
+					}
 				},
 				{
 					"FieldName": "Biography",
 					"field_name": "biography",
 					"enable_filter": false,
 					"enable_sort": false,
-					"goType": "string"
+					"goType": "string",
+					"ui": {
+						"field_name": "Biography",
+						"field_type": "text",
+						"in_table": false
+					}
 				},
 				{
 					"FieldName": "Height",
 					"field_name": "height",
 					"enable_filter": false,
 					"enable_sort": true,
-					"goType": "int"
+					"goType": "int",
+					"ui": {
+						"field_name": "Height",
+						"field_type": "number",
+						"in_table": true
+					}
 				},
 				{
 					"FieldName": "ImageURL",
 					"field_name": "image_url",
 					"enable_filter": false,
 					"enable_sort": false,
-					"goType": "string"
+					"goType": "string",
+					"ui": {
+						"field_name": "Image URL",
+						"field_type": "image",
+						"in_table": false
+					}
 				}
 			]
 		},
@@ -216,10 +350,13 @@
 			"ItemsName": "Documents",
 			"item_name": "document",
 			"items_name": "documents",
-			"itemName": "Document",
-			"itemsName": "Documents",
 			"has_embeddings": true,
 			"used_for_embeddings": false,
+			"ui": {
+				"items_name": "Documents",
+				"item_name": "Document",
+				"in_menu": false
+			},
 			"key" : {
 				"FieldName": "ID",
 				"field_name": "id",
@@ -227,36 +364,29 @@
 			},
 			"fields": [
 				{
-					"FieldName": "Content",
-					"field_name": "content",
-					"enable_filter": false,
-					"goType": "string"
-				},
-				{
-					"FieldName": "Tokens",
-					"field_name": "tokens",
-					"enable_filter": false,
-					"goType": "int"
-				},
-				{
-					"FieldName": "Sequence",
-					"field_name": "sequence",
-					"enable_filter": false,
-					"goType": "int"
-				},
-				{
-					"FieldName": "ContentField",
-					"field_name": "content_field",
-					"enable_filter": true,
-					"enable_sort": true,
-					"goType": "string"
-				},
-				{
 					"FieldName": "VideoID",
 					"field_name": "video_id",
 					"enable_filter": true,
 					"enable_sort": true,
-					"goType": "int64"
+					"goType": "int64",
+					"ui": {
+						"field_name": "Video ID",
+						"field_type": "number",
+						"in_table": true
+					}
+				},
+				{
+					"FieldName": "CategoryID",
+					"field_name": "category_id",
+					"enable_filter": true,
+					"enable_sort": true,
+					"goType": "int64",
+					"ui": {
+						"field_name": "Category ID",
+						"field_type": "number",
+						"in_table": true
+					}
+
 				}
 			]
 		}

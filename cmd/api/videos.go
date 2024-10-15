@@ -13,21 +13,22 @@ import (
 
 func (app *application) createVideoHandler(w http.ResponseWriter, r *http.Request) {
 	var input struct {
-		Title        string    `json:"title"`
-		ThumbURL     string    `json:"thumb_url"`
-		ImageURL     string    `json:"image_url"`
-		VideoURL     string    `json:"video_url"`
-		SubtitlesURL string    `json:"subtitles_url"`
-		Description  string    `json:"description"`
-		ReleaseDate  time.Time `json:"release_date"`
-		Width        int       `json:"width"`
-		Height       int       `json:"height"`
-		Duration     int       `json:"duration"`
-		Sequence     int       `json:"sequence"`
-		File         string    `json:"file"`
-		OriginalFile string    `json:"original_file"`
-		Path         bool      `json:"path"`
-		Md5sum       string    `json:"md5sum"`
+		Name                 string    `json:"name"`
+		ThumbURL             string    `json:"thumb_url"`
+		ImageURL             string    `json:"image_url"`
+		VideoURL             string    `json:"video_url"`
+		SubtitlesURL         string    `json:"subtitles_url"`
+		Description          string    `json:"description"`
+		ReleaseDate          time.Time `json:"release_date"`
+		Width                int       `json:"width"`
+		Height               int       `json:"height"`
+		Duration             int       `json:"duration"`
+		Sequence             int       `json:"sequence"`
+		File                 string    `json:"file"`
+		OriginalFile         string    `json:"original_file"`
+		Path                 string    `json:"path"`
+		Md5sum               string    `json:"md5sum"`
+		EnableSemanticSearch bool      `json:"enable_semantic_search"`
 	}
 
 	err := app.readJSON(w, r, &input)
@@ -37,21 +38,22 @@ func (app *application) createVideoHandler(w http.ResponseWriter, r *http.Reques
 	}
 
 	video := &data.Video{
-		Title:        input.Title,
-		ThumbURL:     input.ThumbURL,
-		ImageURL:     input.ImageURL,
-		VideoURL:     input.VideoURL,
-		SubtitlesURL: input.SubtitlesURL,
-		Description:  input.Description,
-		ReleaseDate:  input.ReleaseDate,
-		Width:        input.Width,
-		Height:       input.Height,
-		Duration:     input.Duration,
-		Sequence:     input.Sequence,
-		File:         input.File,
-		OriginalFile: input.OriginalFile,
-		Path:         input.Path,
-		Md5sum:       input.Md5sum,
+		Name:                 input.Name,
+		ThumbURL:             input.ThumbURL,
+		ImageURL:             input.ImageURL,
+		VideoURL:             input.VideoURL,
+		SubtitlesURL:         input.SubtitlesURL,
+		Description:          input.Description,
+		ReleaseDate:          input.ReleaseDate,
+		Width:                input.Width,
+		Height:               input.Height,
+		Duration:             input.Duration,
+		Sequence:             input.Sequence,
+		File:                 input.File,
+		OriginalFile:         input.OriginalFile,
+		Path:                 input.Path,
+		Md5sum:               input.Md5sum,
+		EnableSemanticSearch: input.EnableSemanticSearch,
 	}
 
 	v := validator.New()
@@ -63,7 +65,7 @@ func (app *application) createVideoHandler(w http.ResponseWriter, r *http.Reques
 
 	err = app.models.Videos.Insert(video)
 	if err != nil {
-		app.serverErrorResponse(w, r, err)
+		app.handleCustomVideoErrors(err, w, r, v)
 		return
 	}
 
@@ -127,21 +129,22 @@ func (app *application) updateVideoHandler(w http.ResponseWriter, r *http.Reques
 	}
 
 	var input struct {
-		Title        *string    `json:"title"`
-		ThumbURL     *string    `json:"thumb_url"`
-		ImageURL     *string    `json:"image_url"`
-		VideoURL     *string    `json:"video_url"`
-		SubtitlesURL *string    `json:"subtitles_url"`
-		Description  *string    `json:"description"`
-		ReleaseDate  *time.Time `json:"release_date"`
-		Width        *int       `json:"width"`
-		Height       *int       `json:"height"`
-		Duration     *int       `json:"duration"`
-		Sequence     *int       `json:"sequence"`
-		File         *string    `json:"file"`
-		OriginalFile *string    `json:"original_file"`
-		Path         *bool      `json:"path"`
-		Md5sum       *string    `json:"md5sum"`
+		Name                 *string    `json:"name"`
+		ThumbURL             *string    `json:"thumb_url"`
+		ImageURL             *string    `json:"image_url"`
+		VideoURL             *string    `json:"video_url"`
+		SubtitlesURL         *string    `json:"subtitles_url"`
+		Description          *string    `json:"description"`
+		ReleaseDate          *time.Time `json:"release_date"`
+		Width                *int       `json:"width"`
+		Height               *int       `json:"height"`
+		Duration             *int       `json:"duration"`
+		Sequence             *int       `json:"sequence"`
+		File                 *string    `json:"file"`
+		OriginalFile         *string    `json:"original_file"`
+		Path                 *string    `json:"path"`
+		Md5sum               *string    `json:"md5sum"`
+		EnableSemanticSearch *bool      `json:"enable_semantic_search"`
 	}
 
 	err = app.readJSON(w, r, &input)
@@ -150,8 +153,8 @@ func (app *application) updateVideoHandler(w http.ResponseWriter, r *http.Reques
 		return
 	}
 
-	if input.Title != nil {
-		video.Title = *input.Title
+	if input.Name != nil {
+		video.Name = *input.Name
 	}
 
 	if input.ThumbURL != nil {
@@ -210,6 +213,10 @@ func (app *application) updateVideoHandler(w http.ResponseWriter, r *http.Reques
 		video.Md5sum = *input.Md5sum
 	}
 
+	if input.EnableSemanticSearch != nil {
+		video.EnableSemanticSearch = *input.EnableSemanticSearch
+	}
+
 	v := validator.New()
 
 	if data.ValidateVideo(v, video, validator.ActionUpdate); !v.Valid() {
@@ -219,10 +226,11 @@ func (app *application) updateVideoHandler(w http.ResponseWriter, r *http.Reques
 
 	err = app.models.Videos.Update(video)
 	if err != nil {
-		switch {
-		case errors.Is(err, data.ErrEditConflict):
+
+		if errors.Is(err, data.ErrEditConflict) {
 			app.editConflictResponse(w, r)
-		default:
+			app.handleCustomVideoErrors(err, w, r, v)
+		} else {
 			app.serverErrorResponse(w, r, err)
 		}
 		return
@@ -260,10 +268,11 @@ func (app *application) deleteVideoHandler(w http.ResponseWriter, r *http.Reques
 
 func (app *application) listVideoHandler(w http.ResponseWriter, r *http.Request) {
 	var input struct {
-		Title        string
-		File         string
-		OriginalFile string
-		Md5sum       string
+		Name                 string
+		File                 string
+		OriginalFile         string
+		Md5sum               string
+		EnableSemanticSearch bool
 		data.Filters
 	}
 
@@ -271,13 +280,14 @@ func (app *application) listVideoHandler(w http.ResponseWriter, r *http.Request)
 
 	qs := r.URL.Query()
 
-	input.Title = app.readString(qs, "title", "")
+	input.Name = app.readString(qs, "name", "")
 
 	input.File = app.readString(qs, "file", "")
 
 	input.OriginalFile = app.readString(qs, "original_file", "")
 
 	input.Md5sum = app.readString(qs, "md5sum", "")
+	input.EnableSemanticSearch = app.readBool(qs, "enable_semantic_search", false)
 
 	input.Filters.Page = app.readInt(qs, "page", 1, v)
 	input.Filters.PageSize = app.readInt(qs, "page_size", 20, v)
@@ -285,11 +295,11 @@ func (app *application) listVideoHandler(w http.ResponseWriter, r *http.Request)
 	input.Filters.Sort = app.readString(qs, "sort", "id")
 	input.Filters.SortSafelist = []string{
 		"id",
-		"title",
+		"name",
 		"release_date",
 		"sequence",
 		"-id",
-		"-title",
+		"-name",
 		"-release_date",
 		"-sequence",
 	}
@@ -300,7 +310,7 @@ func (app *application) listVideoHandler(w http.ResponseWriter, r *http.Request)
 	}
 
 	videos, metadata, err := app.models.Videos.GetAll(
-		input.Title,
+		input.Name,
 		input.File,
 		input.OriginalFile,
 		input.Md5sum,
@@ -315,3 +325,35 @@ func (app *application) listVideoHandler(w http.ResponseWriter, r *http.Request)
 		app.serverErrorResponse(w, r, err)
 	}
 }
+
+/*handle_custom_errors_start*/
+
+func (app application) handleCustomVideoErrors(err error, w http.ResponseWriter, r *http.Request, v *validator.Validator) {
+	switch {
+	//	case errors.Is(err, data.ErrDuplicateVideoTitleEn):
+	//		v.AddError("title_en", "a title with this name already exists")
+	//		app.failedValidationResponse(w, r, v.Errors)
+	//	case errors.Is(err, data.ErrDuplicateVideoTitleEs):
+	//		v.AddError("title_es", "a title with this name already exists")
+	//		app.failedValidationResponse(w, r, v.Errors)
+	//	case errors.Is(err, data.ErrDuplicateVideoTitleFr):
+	//		v.AddError("title_fr", "a title with this name already exists")
+	//		app.failedValidationResponse(w, r, v.Errors)
+	//	case errors.Is(err, data.ErrDuplicateVideoURLEn):
+	//		v.AddError("url_en", "a video with this URL already exists")
+	//		app.failedValidationResponse(w, r, v.Errors)
+	//	case errors.Is(err, data.ErrDuplicateVideoURLEs):
+	//		v.AddError("url_es", "a video with this URL already exists")
+	//		app.failedValidationResponse(w, r, v.Errors)
+	//	case errors.Is(err, data.ErrDuplicateVideoURLFr):
+	//		v.AddError("url_fr", "a video with this URL already exists")
+	//		app.failedValidationResponse(w, r, v.Errors)
+	//	case errors.Is(err, data.ErrDuplicateVideoFolder):
+	//		v.AddError("folder", "a video with this folder already exists")
+	//		app.failedValidationResponse(w, r, v.Errors)
+	default:
+		app.serverErrorResponse(w, r, err)
+	}
+}
+
+/*handle_custom_errors_end*/

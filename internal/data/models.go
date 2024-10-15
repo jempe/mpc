@@ -15,6 +15,8 @@ type Models struct {
 	Categories CategoryModel
 	Actors     ActorModel
 	Documents  DocumentModel
+	Users      UserModel
+	Tokens     TokenModel
 }
 
 func NewModels(db *sql.DB) Models {
@@ -23,5 +25,7 @@ func NewModels(db *sql.DB) Models {
 		Categories: CategoryModel{DB: db},
 		Actors:     ActorModel{DB: db},
 		Documents:  DocumentModel{DB: db},
+		Users:      UserModel{DB: db},
+		Tokens:     TokenModel{DB: db},
 	}
 }

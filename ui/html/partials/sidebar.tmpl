@@ -1,0 +1,113 @@
+{{define "sidebar"}}
+    <style>
+	.sidebar {
+		border-radius: 2px;
+		background: var(--accent-color);
+		padding: 40px 0 20px 40px;
+		width: 250px;
+		box-sizing: border-box;
+		z-index: 10;
+	}
+
+	.sidebar_item {
+		display: flex;
+		align-items: center;
+		justify-content: flex-start;
+		padding-left: 33px;
+		column-gap: 45px;
+		width: 302px;
+		height: 80px;
+	}
+
+	.sidebar_items {
+		display: flex;
+		flex-direction: column;
+		row-gap: 10px;
+	}
+
+	.sidebar_link {
+		display: flex;
+		justify-content: flex-start;
+		align-items: center;
+		color: var(--alt-text-color);
+		font-family: Roboto, sans-serif;
+		font-size: 1.1rem;
+		column-gap: 10px;
+		text-decoration: none;
+	}
+
+	.menu_close_button {
+		display: none;
+		position: absolute;
+		top: 15px;
+		right: 15px;
+		width: 30px;
+		height: 30px;
+		align-items: center;
+	}
+
+	.menu_close_line1 {
+		position: absolute;
+		width: 30px;
+		height: 4px;
+		background: white;
+		border-radius: 2px;
+		transform: rotate(45deg);
+	}
+
+	.menu_close_line2 {
+		position: absolute;
+		width: 30px;
+		height: 4px;
+		background: white;
+		border-radius: 2px;
+		transform: rotate(-45deg);
+	}
+
+	@media (max-width: 1023px) {
+		.sidebar {
+			position: absolute;
+			width: 100vw;
+			min-height: 100vh;
+			transition-duration: 0.5s;
+			transform: translateX(-100vw);
+		}
+
+		body.menu_open .sidebar {
+			transform: translateX(0);
+		}
+
+		body.menu_open .menu_close_button {
+			display: flex;
+		}
+	}
+
+    </style>
+    <aside class="sidebar">
+	<a class="menu_close_button">
+		<span class="menu_close_line1"></span>
+		<span class="menu_close_line2"></span>
+	</a>
+
+                <section class="sidebar_items">
+		<a class="sidebar_link" href="admin/videos.html">
+			<span class="sidebar_text">Videos</span>
+                </a>
+		<a class="sidebar_link" href="admin/categories.html">
+			<span class="sidebar_text">Categories</span>
+                </a>
+		<a class="sidebar_link" href="admin/actors.html">
+			<span class="sidebar_text">Actors</span>
+                </a>
+                </section>
+            </aside>
+
+	<script>
+		const menuCloseButton = document.querySelector('.menu_close_button');
+
+		menuCloseButton.addEventListener('click', () => {
+			document.body.classList.toggle('menu_open');
+		});
+	</script>
+{{end}}
+

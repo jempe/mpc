@@ -8,15 +8,18 @@ import (
 
 	"github.com/jempe/mpc/internal/data"
 	"github.com/jempe/mpc/internal/validator"
+	"github.com/pgvector/pgvector-go"
 )
 
 func (app *application) createDocumentHandler(w http.ResponseWriter, r *http.Request) {
 	var input struct {
+		Title        string `json:"title"`
 		Content      string `json:"content"`
 		Tokens       int    `json:"tokens"`
 		Sequence     int    `json:"sequence"`
 		ContentField string `json:"content_field"`
 		VideoID      int64  `json:"video_id"`
+		CategoryID   int64  `json:"category_id"`
 	}
 
 	err := app.readJSON(w, r, &input)
@@ -25,12 +28,14 @@ func (app *application) createDocumentHandler(w http.ResponseWriter, r *http.Req
 		return
 	}
 
-	Document := &data.Document{
+	document := &data.Document{
+		Title:        input.Title,
 		Content:      input.Content,
 		Tokens:       input.Tokens,
 		Sequence:     input.Sequence,
 		ContentField: input.ContentField,
 		VideoID:      input.VideoID,
+		CategoryID:   input.CategoryID,
 	}
 
 	if input.Tokens == 0 {
@@ -40,26 +45,26 @@ func (app *application) createDocumentHandler(w http.ResponseWriter, r *http.Req
 			return
 		}
 
-		Document.Tokens = countedTokens
+		document.Tokens = countedTokens
 	}
 
 	v := validator.New()
 
-	if data.ValidateDocument(v, Document, validator.ActionCreate); !v.Valid() {
+	if data.ValidateDocument(v, document, validator.ActionCreate); !v.Valid() {
 		app.failedValidationResponse(w, r, v.Errors)
 		return
 	}
 
-	err = app.models.Documents.Insert(Document)
+	err = app.models.Documents.Insert(document)
 	if err != nil {
-		app.serverErrorResponse(w, r, err)
+		app.handleCustomDocumentErrors(err, w, r, v)
 		return
 	}
 
 	headers := make(http.Header)
-	headers.Set("Location", fmt.Sprintf("/v1/documents/%d", Document.ID))
+	headers.Set("Location", fmt.Sprintf("/v1/documents/%d", document.ID))
 
-	err = app.writeJSON(w, http.StatusCreated, envelope{"document": Document}, headers)
+	err = app.writeJSON(w, http.StatusCreated, envelope{"document": document}, headers)
 	if err != nil {
 		app.serverErrorResponse(w, r, err)
 	}
@@ -72,7 +77,7 @@ func (app *application) showDocumentHandler(w http.ResponseWriter, r *http.Reque
 		return
 	}
 
-	Document, err := app.models.Documents.Get(id)
+	document, err := app.models.Documents.Get(id)
 	if err != nil {
 		switch {
 		case errors.Is(err, data.ErrRecordNotFound):
@@ -83,7 +88,7 @@ func (app *application) showDocumentHandler(w http.ResponseWriter, r *http.Reque
 		return
 	}
 
-	err = app.writeJSON(w, http.StatusOK, envelope{"document": Document}, nil)
+	err = app.writeJSON(w, http.StatusOK, envelope{"document": document}, nil)
 
 	if err != nil {
 		app.serverErrorResponse(w, r, err)
@@ -97,7 +102,7 @@ func (app *application) updateDocumentHandler(w http.ResponseWriter, r *http.Req
 		return
 	}
 
-	Document, err := app.models.Documents.Get(id)
+	document, err := app.models.Documents.Get(id)
 	if err != nil {
 		switch {
 		case errors.Is(err, data.ErrRecordNotFound):
@@ -109,18 +114,20 @@ func (app *application) updateDocumentHandler(w http.ResponseWriter, r *http.Req
 	}
 
 	if r.Header.Get("X-Expected-Version") != "" {
-		if strconv.FormatInt(int64(Document.Version), 32) != r.Header.Get("X-Expected-Version") {
+		if strconv.FormatInt(int64(document.Version), 32) != r.Header.Get("X-Expected-Version") {
 			app.editConflictResponse(w, r)
 			return
 		}
 	}
 
 	var input struct {
+		Title        *string `json:"title"`
 		Content      *string `json:"content"`
 		Tokens       *int    `json:"tokens"`
 		Sequence     *int    `json:"sequence"`
 		ContentField *string `json:"content_field"`
 		VideoID      *int64  `json:"video_id"`
+		CategoryID   *int64  `json:"category_id"`
 	}
 
 	err = app.readJSON(w, r, &input)
@@ -129,52 +136,62 @@ func (app *application) updateDocumentHandler(w http.ResponseWriter, r *http.Req
 		return
 	}
 
-	if input.Content != nil {
-		Document.Content = *input.Content
+	if input.Title != nil {
+		document.Title = *input.Title
 	}
 
 	if input.Tokens != nil {
-		Document.Tokens = *input.Tokens
-	} else if input.Content != nil {
-		countedTokens, err := app.countTokens(Document.Content)
+		document.Tokens = *input.Tokens
+	}
+
+	if input.Content != nil {
+		document.Content = *input.Content
+
+		countedTokens, err := app.countTokens(document.Content)
 		if err != nil {
 			app.serverErrorResponse(w, r, err)
 			return
 		}
-		Document.Tokens = countedTokens
+
+		document.Tokens = countedTokens
 	}
 
 	if input.Sequence != nil {
-		Document.Sequence = *input.Sequence
+		document.Sequence = *input.Sequence
 	}
 
 	if input.ContentField != nil {
-		Document.ContentField = *input.ContentField
+		document.ContentField = *input.ContentField
 	}
 
 	if input.VideoID != nil {
-		Document.VideoID = *input.VideoID
+		document.VideoID = *input.VideoID
+	}
+
+	if input.CategoryID != nil {
+		document.CategoryID = *input.CategoryID
 	}
 
 	v := validator.New()
 
-	if data.ValidateDocument(v, Document, validator.ActionUpdate); !v.Valid() {
+	if data.ValidateDocument(v, document, validator.ActionUpdate); !v.Valid() {
 		app.failedValidationResponse(w, r, v.Errors)
 		return
 	}
 
-	err = app.models.Documents.Update(Document)
+	err = app.models.Documents.Update(document)
 	if err != nil {
-		switch {
-		case errors.Is(err, data.ErrEditConflict):
+
+		if errors.Is(err, data.ErrEditConflict) {
 			app.editConflictResponse(w, r)
-		default:
+			app.handleCustomDocumentErrors(err, w, r, v)
+		} else {
 			app.serverErrorResponse(w, r, err)
 		}
 		return
 	}
 
-	err = app.writeJSON(w, http.StatusOK, envelope{"document": Document}, nil)
+	err = app.writeJSON(w, http.StatusOK, envelope{"document": document}, nil)
 	if err != nil {
 		app.serverErrorResponse(w, r, err)
 	}
@@ -206,8 +223,8 @@ func (app *application) deleteDocumentHandler(w http.ResponseWriter, r *http.Req
 
 func (app *application) listDocumentHandler(w http.ResponseWriter, r *http.Request) {
 	var input struct {
-		ContentField string
-		VideoID      int64
+		VideoID    int64
+		CategoryID int64
 		data.Filters
 	}
 
@@ -215,9 +232,9 @@ func (app *application) listDocumentHandler(w http.ResponseWriter, r *http.Reque
 
 	qs := r.URL.Query()
 
-	input.ContentField = app.readString(qs, "content_field", "")
-
 	input.VideoID = app.readInt64(qs, "video_id", 0, v)
+
+	input.CategoryID = app.readInt64(qs, "category_id", 0, v)
 
 	input.Filters.Page = app.readInt(qs, "page", 1, v)
 	input.Filters.PageSize = app.readInt(qs, "page_size", 20, v)
@@ -225,11 +242,11 @@ func (app *application) listDocumentHandler(w http.ResponseWriter, r *http.Reque
 	input.Filters.Sort = app.readString(qs, "sort", "id")
 	input.Filters.SortSafelist = []string{
 		"id",
-		"content_field",
 		"video_id",
+		"category_id",
 		"-id",
-		"-content_field",
 		"-video_id",
+		"-category_id",
 	}
 
 	if data.ValidateFilters(v, input.Filters); !v.Valid() {
@@ -237,17 +254,140 @@ func (app *application) listDocumentHandler(w http.ResponseWriter, r *http.Reque
 		return
 	}
 
-	Documents, metadata, err := app.models.Documents.GetAll(
-		input.ContentField,
+	documents, metadata, err := app.models.Documents.GetAll(
 		input.VideoID,
+		input.CategoryID,
 		input.Filters)
 	if err != nil {
 		app.serverErrorResponse(w, r, err)
 		return
 	}
 
-	err = app.writeJSON(w, http.StatusOK, envelope{"documents": Documents, "metadata": metadata}, nil)
+	err = app.writeJSON(w, http.StatusOK, envelope{"documents": documents, "metadata": metadata}, nil)
 	if err != nil {
 		app.serverErrorResponse(w, r, err)
 	}
 }
+
+/*handle_custom_errors_start*/
+
+func (app application) handleCustomDocumentErrors(err error, w http.ResponseWriter, r *http.Request, v *validator.Validator) {
+	switch {
+	//	case errors.Is(err, data.ErrDuplicateDocumentTitleEn):
+	//		v.AddError("title_en", "a title with this name already exists")
+	//		app.failedValidationResponse(w, r, v.Errors)
+	//	case errors.Is(err, data.ErrDuplicateDocumentTitleEs):
+	//		v.AddError("title_es", "a title with this name already exists")
+	//		app.failedValidationResponse(w, r, v.Errors)
+	//	case errors.Is(err, data.ErrDuplicateDocumentTitleFr):
+	//		v.AddError("title_fr", "a title with this name already exists")
+	//		app.failedValidationResponse(w, r, v.Errors)
+	//	case errors.Is(err, data.ErrDuplicateDocumentURLEn):
+	//		v.AddError("url_en", "a video with this URL already exists")
+	//		app.failedValidationResponse(w, r, v.Errors)
+	//	case errors.Is(err, data.ErrDuplicateDocumentURLEs):
+	//		v.AddError("url_es", "a video with this URL already exists")
+	//		app.failedValidationResponse(w, r, v.Errors)
+	//	case errors.Is(err, data.ErrDuplicateDocumentURLFr):
+	//		v.AddError("url_fr", "a video with this URL already exists")
+	//		app.failedValidationResponse(w, r, v.Errors)
+	//	case errors.Is(err, data.ErrDuplicateDocumentFolder):
+	//		v.AddError("folder", "a video with this folder already exists")
+	//		app.failedValidationResponse(w, r, v.Errors)
+	default:
+		app.serverErrorResponse(w, r, err)
+	}
+}
+
+/*handle_custom_errors_end*/
+/*list_document_semantic_start*/
+func (app *application) listDocumentSemanticHandler(w http.ResponseWriter, r *http.Request) {
+	var input struct {
+		Search             string
+		Similarity         float64
+		EmbeddingsProvider string
+		ContentFields      []string
+		VideoID            int64
+		CategoryID         int64
+		data.Filters
+	}
+
+	v := validator.New()
+
+	qs := r.URL.Query()
+
+	defaultEmbeddingsProvider := app.config.embeddings.defaultProvider
+
+	input.Search = app.readString(qs, "search", "")
+	input.Similarity = app.readFloat(qs, "similarity", 0.7, v)
+	input.EmbeddingsProvider = app.readString(qs, "embeddings-provider", defaultEmbeddingsProvider)
+
+	input.ContentFields = app.readCSV(qs, "content_fields", []string{})
+
+	//Additional Semantic Search Filters
+	input.VideoID = app.readInt64(qs, "video_id", 0, v)
+	input.CategoryID = app.readInt64(qs, "category_id", 0, v)
+
+	input.Filters.Page = app.readInt(qs, "page", 1, v)
+	input.Filters.PageSize = app.readInt(qs, "page_size", 5, v)
+
+	input.Filters.Sort = app.readString(qs, "sort", "id")
+	input.Filters.SortSafelist = []string{
+		"id",
+		"-id",
+	}
+
+	if input.Search == "" {
+		app.serverErrorResponse(w, r, errors.New("missing required search parameter"))
+		return
+	}
+
+	if !(input.EmbeddingsProvider == "sentence-transformers" || input.EmbeddingsProvider == "openai" || input.EmbeddingsProvider == "google") {
+		app.serverErrorResponse(w, r, errors.New("invalid embeddings provider"))
+		return
+	}
+
+	if data.ValidateFilters(v, input.Filters); !v.Valid() {
+		app.failedValidationResponse(w, r, v.Errors)
+		return
+	}
+
+	searchInput := []string{
+		input.Search,
+	}
+
+	var embeddings [][]float32
+	var err error
+	if input.EmbeddingsProvider == "sentence-transformers" {
+		embeddings, err = app.fetchSentenceTransformersEmbeddings(searchInput)
+		if err != nil {
+			app.serverErrorResponse(w, r, err)
+			return
+		}
+	}
+
+	if len(embeddings) == 0 {
+		app.serverErrorResponse(w, r, errors.New("no embeddings returned"))
+		return
+	}
+
+	documents, metadata, err := app.models.Documents.GetAllSemantic(
+		pgvector.NewVector(embeddings[0]),
+		input.Similarity,
+		input.EmbeddingsProvider,
+		input.ContentFields,
+		input.VideoID,
+		input.CategoryID,
+		input.Filters)
+	if err != nil {
+		app.serverErrorResponse(w, r, err)
+		return
+	}
+
+	err = app.writeJSON(w, http.StatusOK, envelope{"documents": documents, "metadata": metadata}, nil)
+	if err != nil {
+		app.serverErrorResponse(w, r, err)
+	}
+}
+
+/*list_document_semantic_end*/
