@@ -64,4 +64,4 @@ MPC is a web based media player that allows you to manage and stream your video 
 
 ## License
 
-This project is licensed under the MIT License. See the [LICENSE](LICENSE) file for details.
+This project is licensed under the GPLv3 License. See the [LICENSE](LICENSE) file for details.
