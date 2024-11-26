@@ -1,11 +1,10 @@
 # MPC - Media Private Collection
 
-MPC is a web based media player that allows you to manage and stream your video library. It includes features such as user authentication, video scanning, and remote control.
+MPC is a web based media player that allows you to manage and stream your video library. It includes features such as video scanning, and remote control.
 
 ## Features
 
 - Manage and stream your video library
-- User authentication
 - Video scanning
 - Remote control
 - Web server to serve video content and handle requests
